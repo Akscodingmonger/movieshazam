@@ -1,0 +1,115 @@
+# imports for Google searching, getting URLs, and getting HTMLs
+from bs4 import BeautifulSoup as bs
+from googlesearch import search
+import requests
+
+# imports for NER
+import spacy
+
+# imports for GUI
+import customtkinter as ctkr
+
+
+
+# NER and GUI setup
+NER = spacy.load("en_core_web_sm")
+
+ctkr.set_appearance_mode("System")
+ctkr.set_default_color_theme("dark-blue")
+
+root = ctkr.CTk()
+root.geometry("500 x 350")
+
+
+
+# gets the movie name using Google searches and NER
+def movieGetter():
+
+    numHtmls = 10  # number of google searches
+    query = entry1.get()  # gets the entered quote from the GUI
+    urls = search(query, tld="co.in", num=numHtmls, stop=numHtmls, pause=2)  # gets an array of URLS from Google search
+    
+    # declares and initializes arrays to store raw HTMLs of search results, cleaned HTMLs of search results, and possible movie titles
+    htmls = [None] * numHtmls
+    texts = [None] * numHtmls
+    movieTitles = ["Placeholder"]
+
+    # populates the HTML array by getting HTMLs from URL array using BeautifulSoup
+    i = 0
+    for j in urls:
+        htmls[i] = bs(requests.get(j).text, features="html.parser")
+        i += 1
+
+    # populates the texts array by cleaning up the HTML to allow for more consistent NER
+    l = 0
+    for k in htmls:
+        for script in k(["script", "style"]):
+            script.extract()
+
+        texts[l] = k.get_text(separator = '\n', strip=True)
+        # break into lines and remove leading and trailing space on each
+        lines = (line.strip() for line in texts[l].splitlines())
+        # break multi-headlines into a line each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        # drop blank lines
+        texts[l] = '\n'.join(chunk for chunk in chunks if chunk)
+
+        # NER on texts array
+        texts[l] = NER(texts[l])
+
+        # populates movieTitles array with possible movie titles (if NER recognizes a phrase as a Work of Art)
+        for word in texts[l].ents:
+            if word.label_==("WORK_OF_ART"):
+                movieTitles.append(word.text)
+
+        l += 1
+
+    # sorts movieTitles array
+    movieTitles.sort()
+    mainmovie = movieTitles[1]
+
+    # finds most recurring movie title as identified by NER
+    totalCount = 1
+    individualCount = 1
+    
+    for m in range(1, len(movieTitles)):
+        if movieTitles[m] == movieTitles[m - 1] and movieTitles[m] != "Valheim":
+            individualCount += 1
+        
+        if individualCount > totalCount:
+            totalCount = individualCount
+            individualCount = 1
+            mainMovie = movieTitles[m]
+
+    return mainMovie
+
+
+
+# prints movie result in the GUI
+def printer():
+    movie = movieGetter()
+    print(movie)
+    movieName.configure(text=movie)
+
+
+
+# GUI framework
+frame = ctkr.CTkFrame(master=root)
+frame.pack(pady=20, padx=60, fill="both", expand=True)
+
+label = ctkr.CTkLabel(master=frame, text="Shazam for Movies")
+label.pack(pady=12, padx=10)
+
+entry1 = ctkr.CTkEntry(master=frame, placeholder_text="Enter Your Quote")
+entry1.pack(pady=12, padx=10)
+
+movieName = ctkr.CTkLabel(master=frame, text="")
+movieName.pack(pady=12, padx=10)
+
+button = ctkr.CTkButton(master=frame, text="Submit", command=printer)
+button.pack(pady=12, padx=10)
+
+
+
+# runs GUI
+root.mainloop()
