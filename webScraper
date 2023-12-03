@@ -18,7 +18,7 @@ ctkr.set_appearance_mode("System")
 ctkr.set_default_color_theme("dark-blue")
 
 root = ctkr.CTk()
-root.geometry("500 x 350")
+root.geometry("800 x 500")
 
 
 
@@ -27,6 +27,7 @@ def movieGetter():
 
     numHtmls = 10  # number of google searches
     query = entry1.get()  # gets the entered quote from the GUI
+    print(query)
     urls = search(query, tld="co.in", num=numHtmls, stop=numHtmls, pause=2)  # gets an array of URLS from Google search
     
     # declares and initializes arrays to store raw HTMLs of search results, cleaned HTMLs of search results, and possible movie titles
@@ -91,25 +92,36 @@ def printer():
     print(movie)
     movieName.configure(text=movie)
 
-
+def switch_event(): 
+    if (switch_var.get() == "off"):
+        ctkr.set_appearance_mode('light')
+    else:
+        ctkr.set_appearance_mode('dark')
+    
 
 # GUI framework
 frame = ctkr.CTkFrame(master=root)
-frame.pack(pady=20, padx=60, fill="both", expand=True)
-
-label = ctkr.CTkLabel(master=frame, text="Shazam for Movies")
-label.pack(pady=12, padx=10)
-
-entry1 = ctkr.CTkEntry(master=frame, placeholder_text="Enter Your Quote")
-entry1.pack(pady=12, padx=10)
-
-movieName = ctkr.CTkLabel(master=frame, text="")
-movieName.pack(pady=12, padx=10)
-
-button = ctkr.CTkButton(master=frame, text="Submit", command=printer)
-button.pack(pady=12, padx=10)
+frame.pack(pady=40, padx=120, fill="both", expand=True)
 
 
+label = ctkr.CTkLabel(master=frame, text="Shazam for Movies", font=("calibri", 40))
+label.pack(pady=24, padx=20)
 
+intro = ctkr.CTkLabel(master=frame, text="Please enter a movie dialogue, and we'll guess the possible movies it could be from")
+intro.pack(pady=24, padx=20)
+
+entry1 = ctkr.CTkEntry(master=frame, placeholder_text="Enter Your Quote", font=("sans-bold", 12))
+entry1.pack(pady=24, padx=20)
+
+movieName = ctkr.CTkLabel(master=frame, text="", font=("calibri", 20))
+movieName.pack(pady=24, padx=20)
+
+button = ctkr.CTkButton(master=frame, text="Submit", command=printer, fg_color="#1a0dd1", border_color="black", hover_color="blue", font=("calibri", 25))
+button.pack(pady=10, padx=20)
+switch_var = ctkr.StringVar(value="on")
+switch = ctkr.CTkSwitch(master = root, text="Change light mode", command=switch_event,
+                                 variable=switch_var, onvalue="on", offvalue="off", fg_color="blue", 
+                                 switch_height=20, switch_width=50)
+switch.place(relx=0.5, rely=0.12, anchor = "center")
 # runs GUI
 root.mainloop()
